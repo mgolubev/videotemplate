@@ -8,46 +8,27 @@
 import UIKit
 
 class ViewController: UIViewController {
-
     override func viewDidLoad() {
         super.viewDidLoad()
-        DispatchQueue.global().async {
-            let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .allDomainsMask).first!
 
-            let model = ForegroundMaskModel.shared
+        let items = ImageItems(
+            model: ForegroundMaskModel.shared,
+            images: (0...7).map { "\($0)"},
+            effects: SampleImageEffects(context: CIContext())
+        )
+        items.applyEffects { array in
+            guard let audio = Bundle.main.url(forResource: "music", withExtension: "aac") else { return }
 
-            let start = Date()
-            let items: [ImageItem] = (0...7).compactMap { index in
-                guard let url = Bundle.main.url(forResource: "\(index)", withExtension: "jpeg") else { return nil }
-                return .init(at: url)
-            }
+            guard let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .allDomainsMask).first else { return }
+            let outputUrl = documentsUrl.appendingPathComponent("video.mp4", conformingTo: .video)
 
-            let group = DispatchGroup()
-
-            items.enumerated().forEach { index, item in
-                group.enter()
-                item.prepareMask(model) {
-                    group.leave()
-                }
-            }
-
-            group.notify(queue: .global()) {
-                print("items generating time \(Date().timeIntervalSince(start))")
-
-                let effects = Effects(context: CIContext())
-                let array = effects.apply(to: items)
-
-                guard let audio = Bundle.main.url(forResource: "music", withExtension: "aac") else { return }
-
-                let outputUrl = documentsUrl.appendingPathComponent("video.mp4", conformingTo: .video)
-                Video.create(
-                    from: array,
-                    soundUrl: audio,
-                    outputUrl: outputUrl
-                ) {
-                    DispatchQueue.main.async {
-                        self.share(url: outputUrl)
-                    }
+            Video.create(
+                from: array,
+                soundUrl: audio,
+                outputUrl: outputUrl
+            ) {
+                DispatchQueue.main.async {
+                    self.share(url: outputUrl)
                 }
             }
         }

@@ -9,7 +9,11 @@ import Foundation
 import CoreVideo
 import CoreImage
 
-class Effects {
+protocol Effects {
+    func apply(to items: [ImageItem]) -> [CVPixelBuffer]
+}
+
+class SampleImageEffects: Effects {
     let ciContext: CIContext
 
     init(context: CIContext) {
@@ -18,6 +22,7 @@ class Effects {
 
     func apply(to items: [ImageItem]) -> [CVPixelBuffer] {
         var effects: [Effect] = []
+        effects.append(NoEffect(item: items[0]))
         effects.append(NoEffect(item: items[0]))
         effects.append(MoveEffect(first: items[0], last: items[1], point: .init(x: 100, y: 100)))
         effects.append(CutMoveEffect(first: items[0], last: items[1], point: .init(x: 100, y: 100)))
